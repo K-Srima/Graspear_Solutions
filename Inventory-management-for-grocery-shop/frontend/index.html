@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grocery Order</title>
+    <script>
+        // Function to handle the form submission
+        function placeOrder() {
+            // Get the number of items in the order form
+            const orderItems = [];
+            const itemCount = document.querySelectorAll('.order-item').length;
+
+            // Collect data from the form inputs
+            for (let i = 1; i <= itemCount; i++) {
+                const itemName = document.getElementById("item" + i).value;
+                const itemQuantity = parseInt(document.getElementById("quantity" + i).value);
+                orderItems.push({ name: itemName, quantity: itemQuantity });
+            }
+
+            const orderData = { items: orderItems };
+
+            // Debugging: log the orderData before sending it
+            console.log("Order Data:", orderData);
+
+            // Send the POST request to the Flask backend
+            fetch('http://127.0.0.1:5000/place-order', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(orderData)
+            })
+            .then(response => response.json())  // Parse the response as JSON
+            .then(data => {
+                if (data.error) {
+                    // Handle any errors from the server
+                    console.error("Error:", data.error);
+                    alert("Error: " + data.error);
+                } else {
+                    // Handle the success response
+                    console.log('Success:', data);
+                    let resultText = `Order placed successfully!\nTotal Weight: ${data.totalWeight} kg\nTotal Cost: ${data.totalCost} INR\n`;
+                    resultText += "Updated Inventory:\n";
+                    data.inventory.forEach(item => {
+                        resultText += `${item.name} - Remaining: ${item.remaining} (${item.lowStock ? 'Low stock!' : 'Sufficient stock'})\n`;
+                    });
+                    alert(resultText);
+                }
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+                alert("There was an error placing the order.");
+            });
+        }
+
+        // Function to add a new item input row
+        function addItem() {
+            const itemCount = document.querySelectorAll('.order-item').length + 1;
+            const newItemRow = `
+                <div class="order-item">
+                    <label for="item${itemCount}">Item ${itemCount}:</label>
+                    <input type="text" id="item${itemCount}" placeholder="Item Name" required>
+                    <label for="quantity${itemCount}">Quantity:</label>
+                    <input type="number" id="quantity${itemCount}" value="1" required>
+                </div>
+                <br>
+            `;
+            document.getElementById('order-items').insertAdjacentHTML('beforeend', newItemRow);
+        }
+    </script>
+</head>
+<body>
+
+    <h1>Grocery Order Form</h1>
+
+    <div id="order-items">
+        <div class="order-item">
+            <label for="item1">Item 1:</label>
+            <input type="text" id="item1" placeholder="Item Name" required>
+            <label for="quantity1">Quantity:</label>
+            <input type="number" id="quantity1" value="1" required>
+        </div>
+    </div>
+
+    <button type="button" onclick="addItem()">Add Another Item</button>
+    <br><br>
+    <button onclick="placeOrder()">Place Order</button>
+
+</body>
+</html>
